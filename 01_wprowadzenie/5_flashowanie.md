@@ -44,6 +44,7 @@ Ubuntu automatycznie montuje partycje z karty. Odmontuj je (podmień `<DEVICE>`,
 Wgraj obraz:
 
     sudo bmaptool copy core-image-base-raspberrypi4-64.rootfs.wic.bz2 /dev/<DEVICE>
+    sync
 
 `bmaptool` sam znajdzie plik `.bmap` leżący obok obrazu. Gdy skończy, wyjmij kartę i włóż do Raspberry Pi.
 
@@ -96,11 +97,4 @@ Zapisz adres IP interfejsu `eth0` - przyda się w następnym ćwiczeniu.
 
 ## Zadanie
 
-TODO: nie podoba mi się, może lepiej kazać rozszyfrować każdy parametr za pomocą google? 
-
-Sprawdź na płytce, z jakimi parametrami wystartował kernel:
-
-    cat /proc/cmdline
-
-1. Który parametr odpowiada za konsolę na UART?
-2. Skąd się wziął? Podpowiedź: zmienna, którą ustawiłeś w `local.conf`.
+Sprawdź na płytce, z jakimi parametrami wystartował kernel.

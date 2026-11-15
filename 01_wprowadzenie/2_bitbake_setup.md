@@ -93,9 +93,9 @@ Sprawdź, jakie warstwy są w buildzie:
 `bitbake-setup` trzyma kopię konfiguracji w repozytorium git w katalogu `config`:
 
     # kontener
-    cat /workdir/bitbake-builds/rpi4/config # TODO: SPRAWDZ
+    ls /workdir/bitbake-builds/rpi4/config
 
-Sprawdź, czy setup jest zgodny z plikiem JSON:
+Sprawdź na wyrywki czy setup jest zgodny z plikiem JSON:
 
     # kontener
     bitbake-setup status
@@ -105,6 +105,11 @@ a `bitbake-setup update` je zastosuje. Zrobimy to w ćwiczeniu z warstwami.
 
 ## Zadanie
 
-Przeczytaj `build/README`, który wygenerował `bitbake-setup`. Odpowiedz:
+Zapoznaj się z plikiem `build/README`, który wygenerował `bitbake-setup`. 
 
-**Q: Jakim poleceniem zmienisz maszynę, dla której budujemy?  TODO: SPRAWDZ**
+Wywołaj polecenie:
+
+    # kontener
+    bitbake-layers show-machines
+
+Odpowiedz na pytanie: ile wersji raspberry pi jest wspieranych przez warstwę meta-raspberrypi?

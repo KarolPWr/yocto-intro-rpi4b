@@ -17,6 +17,8 @@ Logujemy się bez hasła - tak jak przez UART.
 
 ### Po ponownym wgraniu obrazu
 
+TODO: @claude mi to nie wyskoczyło, dorzuć do notatek jako pokaz a stąd wyrzuć 
+
 Serwer SSH (dropbear) generuje klucze hosta przy pierwszym starcie systemu (`dropbearkey.service`).
 Po każdym wgraniu obrazu na kartę płytka ma więc nowe klucze, a `ssh` na hoście ostrzega:
 
@@ -71,5 +73,5 @@ Każda linia to jedna paczka: `nazwa architektura wersja`.
 
    </details>
 
-2. Zostaw skrypt na kilka minut, potem zrestartuj płytkę (`reboot`) i zajrzyj do pliku z logami.
+2. Zostaw skrypt na minutę, potem zrestartuj płytkę (`reboot`) i zajrzyj do pliku z logami.
    Co się stało? Dlaczego?

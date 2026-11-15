@@ -87,18 +87,6 @@ Na początku bitbake parsuje receptury, potem sprawdza, ile wyników tasków mo�
 
 `Local` to wyniki znalezione w naszym cache, `Missed` - taski, które trzeba wykonać od zera.
 
-TODO: to zostawić na po buildzie, w ramach wspólnej eksploracji.
-
-W trakcie buildu, w drugim terminalu, zajrzyj do katalogu `build`:
-
-    ls ~/yocto-kurs/bitbake-builds/rpi4/build
-    ls ~/yocto-kurs/bitbake-builds/rpi4/build/tmp
-
-Najważniejsze katalogi w `tmp`:
-- `work/` - katalogi robocze receptur (źródła, build, logi każdego taska),
-- `deploy/` - wyniki: obrazy, paczki, licencje,
-- `log/` - logi całego buildu.
-
 **Q: Gdzie znajduje się wynikowy obraz? Jakie pliki obrazu powstały?**
 
 ## Zadanie

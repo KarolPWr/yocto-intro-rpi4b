@@ -38,7 +38,7 @@ Oba ustawienia są w `site.conf` w katalogu głównym, który utworzył `bitbake
 a nie od projektu (np. ścieżki do cache).
 
 Bitbake wczytuje pliki konfiguracyjne z `conf/` w kolejności: `site.conf`, `auto.conf`, `toolcfg.conf`, `local.conf`
-(źródło: `meta/conf/bitbake.conf` w openembedded-core).  TODO: Czyli local.conf nadpisuje inne? To tak działa?
+(źródło: `meta/conf/bitbake.conf` w openembedded-core).
 
 **Q: Jeśli ta sama zmienna jest ustawiona przez `=` w `site.conf` i w `local.conf`, która wartość wygra?**
 
