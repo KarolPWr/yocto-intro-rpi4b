@@ -1,0 +1,11 @@
+# akceptacja licencji firmware WiFi/BT (linux-firmware-rpidistro)
+LICENSE_FLAGS_ACCEPTED = "synaptics-killswitch"
+
+# konsola szeregowa na pinach GPIO (UART)
+ENABLE_UART = "1"
+
+# serwer SSH
+EXTRA_IMAGE_FEATURES += "ssh-server-dropbear"
+
+# serwer WWW we Flasku
+IMAGE_INSTALL:append = " python3-flask"
