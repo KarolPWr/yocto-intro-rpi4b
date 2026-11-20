@@ -15,19 +15,6 @@ Logujemy się bez hasła - tak jak przez UART.
 
 **Q: Co jest potrzebne na targecie, żeby można było połączyć się z płytką po SSH?**
 
-### Po ponownym wgraniu obrazu
-
-TODO: @claude mi to nie wyskoczyło, dorzuć do notatek jako pokaz a stąd wyrzuć 
-
-Serwer SSH (dropbear) generuje klucze hosta przy pierwszym starcie systemu (`dropbearkey.service`).
-Po każdym wgraniu obrazu na kartę płytka ma więc nowe klucze, a `ssh` na hoście ostrzega:
-
-    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!
-
-Usuń stary klucz z listy znanych hostów i połącz się jeszcze raz:
-
-    ssh-keygen -R <ADRES_IP>
-
 ### Kopiowanie plików
 
 Pliki z hosta na płytkę kopiujemy przez `scp`, np.:

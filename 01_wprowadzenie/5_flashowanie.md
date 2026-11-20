@@ -63,6 +63,8 @@ pracują na 3.3V - 5V może je uszkodzić.
 
 TX jednej strony łączymy z RX drugiej. Pinu VCC konwertera nie podłączamy - płytka ma własne zasilanie.
 
+Piny znajdziesz na schemacie złącza: [RPI_PINOUT.png](../RPI_PINOUT.png).
+
 Źródło: [Raspberry Pi Documentation - GPIO](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#gpio),
 [Configure UARTs](https://www.raspberrypi.com/documentation/computers/configuration.html#configure-uarts)
 

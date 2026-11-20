@@ -1,0 +1,37 @@
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "brcm,bcm2835";
+
+	fragment@0 {
+		// konfiguracja pinu w kontrolerze GPIO
+		target = <&gpio>;
+		__overlay__ {
+			kurs_led_pin: kurs_led_pin {
+				brcm,pins = <23>;     // numer GPIO
+				brcm,function = <1>;  // 0 = wejście, 1 = wyjście
+				brcm,pull = <0>;      // 0 = brak, 1 = pull-down, 2 = pull-up
+			};
+		};
+	};
+
+	fragment@1 {
+		// nowy węzeł w korzeniu device tree
+		target-path = "/";
+		__overlay__ {
+			kurs-leds {
+				compatible = "gpio-leds";
+				pinctrl-names = "default";
+				pinctrl-0 = <&kurs_led_pin>;
+				status = "okay";
+
+				led {
+					label = "kurs";
+					gpios = <&gpio 23 0>; // 0 = aktywny stan wysoki
+					linux,default-trigger = "heartbeat";
+				};
+			};
+		};
+	};
+};

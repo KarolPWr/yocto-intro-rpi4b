@@ -64,11 +64,7 @@ Co to jest:
 - `EXTRA_IMAGE_FEATURES` - dodatkowe funkcje obrazu; `ssh-server-dropbear` to lekki serwer SSH
   ([Yocto Reference - Image Features](https://docs.yoctoproject.org/wrynose/ref-manual/features.html#ref-features-image)).
 
-<!-- TODO(Karol): limity BB_NUMBER_THREADS / PARALLEL_MAKE dla 8 GB RAM - po odpowiedziach uczestników (D-009) -->
-
 ### Fragment czy local.conf?
-
-TODO: może zamienić to w pytanie, fragment vs local.conf, co myślą uczestnicy? i potem odpowiedzieć.
 
 Oba sposoby zmieniają konfigurację buildu. Różnica:
 - `local.conf` - Twój plik, nigdzie nie jest wersjonowany. Szybki do eksperymentów, ale łatwo o nim zapomnieć
@@ -81,7 +77,7 @@ Oba sposoby zmieniają konfigurację buildu. Różnica:
     # kontener
     time bitbake core-image-base
 
-Na początku bitbake parsuje receptury, potem sprawdza, ile wyników tasków może wziąć z sstate-cache:
+Na początku bitbake parsuje recepty, potem sprawdza, ile wyników tasków może wziąć z sstate-cache:
 
     Sstate summary: Wanted ... Local ... Mirrors ... Missed ... Current ... (..% match, ..% complete)
 

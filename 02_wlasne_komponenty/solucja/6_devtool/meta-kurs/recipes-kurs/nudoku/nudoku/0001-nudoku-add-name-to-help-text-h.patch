@@ -1,0 +1,25 @@
+From 557b781daf73cae3bfe818965eb1f24d3d3f31ff Mon Sep 17 00:00:00 2001
+From: Jan Kowalski <jan.kowalski@example.com>
+Date: Tue, 24 Nov 2026 12:00:00 +0100
+Subject: [PATCH] nudoku: add name to help text (-h)
+
+Upstream-Status: Inappropriate [kurs Yocto]
+---
+ src/main.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/src/main.c b/src/main.c
+index 67cda0a..19df9ed 100644
+--- a/src/main.c
++++ b/src/main.c
+@@ -107,6 +107,7 @@ static void print_usage(void)
+ 	printf(_("nudoku [option]\n\n"));
+ 	printf(_("Options:\n"));
+ 	printf(_("-h help:\t\tPrint this help\n"));
++	printf("Kurs Yocto: Jan Kowalski\n");
+ 	printf(_("-v version:\t\tPrint version\n"));
+ 	printf(_("-c nocolor:\t\tDo not use colors\n"));
+ 	printf(_("-o output:\t\tOutput stream (inverse of -s)\n"));
+-- 
+2.43.0
+

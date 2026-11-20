@@ -75,7 +75,6 @@ Ode mnie dostajesz archiwum z cache. Zawiera dwa katalogi:
 
 Co dokładnie siedzi w środku i jak bitbake z tego korzysta - omówimy pierwszego dnia.
 
-<!-- TODO(Karol): nazwa pliku, link do pobrania i rozmiar - uzupełnić po zbudowaniu cache -->
 Pobierz archiwum `<NAZWA_ARCHIWUM>` (ok. `<ROZMIAR>` GB) z linku, który ode mnie dostaniesz,
 razem z plikiem `<NAZWA_ARCHIWUM>.sha256`. Oba pliki zapisz w `~/yocto-kurs`.
 

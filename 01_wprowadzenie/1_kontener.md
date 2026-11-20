@@ -1,5 +1,7 @@
 # Praca z kontenerem
 
+BTW - Jeżeli korzystasz z laptopa - ustaw Power Mode na opcję "Performance" 
+
 Wszystko, co związane z bitbake, uruchamiamy w kontenerze [crops/poky](https://github.com/crops/poky-container).
 Dzięki temu każdy ma identyczne środowisko do budowania, niezależnie od tego, co jest zainstalowane na hoście.
 

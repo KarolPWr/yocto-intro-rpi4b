@@ -33,12 +33,12 @@ Build kończy się od razu błędem:
 
 ## Gdzie jest Flask?
 
-Recepturę z interesującą nas paczką znajdziesz w OpenEmbedded Layer Index. Wpisz `python3-flask` w wyszukiwarkę
-receptur dla gałęzi wrynose:
+Receptę z interesującą nas paczką znajdziesz w OpenEmbedded Layer Index. Wpisz `python3-flask` w wyszukiwarkę
+recept dla gałęzi wrynose:
 
 https://layers.openembedded.org/layerindex/branch/wrynose/recipes/
 
-Zapisz, w której warstwie jest receptura i w jakim repozytorium leży ta warstwa.
+Zapisz, w której warstwie jest recepta i w jakim repozytorium leży ta warstwa.
 
 ## Nowa warstwa w kurs.conf.json
 
@@ -80,6 +80,13 @@ Sprawdź, co widzi bitbake-setup:
 **Q: Co oznacza ten błąd? Jak go naprawić?**
 
 Napraw `kurs.conf.json` i uruchom `bitbake-setup update` jeszcze raz.
+
+<details>
+<summary>Rozwiązanie</summary>
+
+W `bb-layers` dopisz `"meta-openembedded/meta-oe"` - `openembedded-layer` to nazwa kolekcji warstwy `meta-oe`.
+
+</details>
 
 Tym razem `update` pokaże różnice w katalogu `conf/` i zapyta:
 
@@ -125,7 +132,7 @@ Lista paczek w obrazie jest w manifeście (ćwiczenie 6):
 
 </details>
 
-Wgraj nowy obraz na kartę tak jak w ćwiczeniu 5 i uruchom płytkę. Pamiętaj o `ssh-keygen -R <ADRES_IP>`.
+Wgraj nowy obraz na kartę tak jak w ćwiczeniu 5 i uruchom płytkę.
 
 ## Serwer Flask
 

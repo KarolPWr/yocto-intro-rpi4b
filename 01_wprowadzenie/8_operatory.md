@@ -1,6 +1,6 @@
 # Operatory przypisania
 
-Ta sama zmienna może być ustawiona w wielu miejscach: w `local.conf`, w konfiguracji distro, w klasie, w recepturze.
+Ta sama zmienna może być ustawiona w wielu miejscach: w `local.conf`, w konfiguracji distro, w klasie, w recepcie.
 To, które przypisanie wygra, zależy od operatora i od kolejności parsowania.
 W tym ćwiczeniu nic nie budujemy - wystarczy `bitbake-getvar`.
 

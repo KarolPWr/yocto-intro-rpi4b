@@ -1,0 +1,9 @@
+[Unit]
+Description=Log temperatury z czujnika BME280
+
+[Service]
+ExecStart=/usr/bin/bme280-log
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

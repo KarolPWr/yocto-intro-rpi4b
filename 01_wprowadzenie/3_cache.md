@@ -1,7 +1,7 @@
 # Cache: downloads i sstate
 
-Pełny build obrazu od zera to kilka godzin i kilkadziesiąt GB pobranych źródeł. Dlatego przed kursem dostałeś cache,
-który rozpakowałeś do `~/yocto-kurs/cache` (w kontenerze: `/workdir/cache`). Ma dwa katalogi:
+Pełny build obrazu od zera to kilka godzin i kilkadziesiąt GB pobranych źródeł. Dlatego przed kursem dostałeś cache -
+archiwum `yocto-kurs-cache.tar`. Rozpakujemy je do `~/yocto-kurs/cache` (w kontenerze: `/workdir/cache`). Ma dwa katalogi:
 
 - **downloads** (`DL_DIR`) - pobrane źródła: archiwa `.tar.*`, klony repozytoriów git (`git2/`) itp.
 - **sstate-cache** (`SSTATE_DIR`) - wyniki tasków z poprzednich buildów (shared state).
@@ -12,6 +12,41 @@ Ten sam cache można podpiąć do wielu buildów i projektów.
 - [Yocto Overview - Shared State Cache](https://docs.yoctoproject.org/wrynose/overview-manual/concepts.html#shared-state-cache)
 - [Yocto Reference - DL_DIR](https://docs.yoctoproject.org/wrynose/ref-manual/variables.html#term-DL_DIR),
   [SSTATE_DIR](https://docs.yoctoproject.org/wrynose/ref-manual/variables.html#term-SSTATE_DIR)
+
+## Rozpakowanie cache
+
+Archiwum ma ok. 16 GB - po rozpakowaniu zajmie drugie tyle. Sprawdź, czy masz miejsce (na hoście):
+
+    df -h ~/yocto-kurs
+
+Archiwum leży w `~/Downloads`. W Ubuntu po polsku ten katalog to `~/Pobrane` - wtedy podmień ścieżkę w komendach.
+
+Sprawdź, czy archiwum pobrało się w całości - porównaj jego sumę SHA-256 z sumą, którą wyliczyłem przy pakowaniu
+(na hoście, potrwa chwilę):
+
+    cd ~/Downloads
+    echo "6b6b7adc49c9b56ecd106541aa9202da0a244a20e1577a6bb8f7ccabb93984d9  yocto-kurs-cache.tar" | sha256sum -c
+
+Oczekiwany wynik:
+
+    yocto-kurs-cache.tar: OK
+
+Jeśli jest `FAILED` - archiwum jest uszkodzone albo niepełne, pobierz je jeszcze raz.
+
+Rozpakuj archiwum (na hoście, potrwa kilka minut):
+
+    mkdir -p ~/yocto-kurs/cache
+    tar -xf ~/Downloads/yocto-kurs-cache.tar -C ~/yocto-kurs/cache
+
+Sprawdź:
+
+    ls ~/yocto-kurs/cache
+    du -sh ~/yocto-kurs/cache/*
+
+Powinieneś zobaczyć katalogi `downloads` (ok. 11 GB) i `sstate-cache` (ok. 5 GB). Archiwum możesz teraz usunąć,
+żeby odzyskać miejsce:
+
+    rm ~/Downloads/yocto-kurs-cache.tar
 
 ## Gdzie to jest ustawione
 
@@ -68,12 +103,11 @@ Sprawdź:
     ls /workdir/cache/downloads | head -20
     ls /workdir/cache/sstate-cache | head
 
-Pliki sstate leżą w podkatalogach nazwanych od początku hasha. Nazwa pliku zawiera recepturę, architekturę, wersję,
-hash i nazwę taska, np. `sstate:<receptura>:...:<hash>_<task>.tar.zst`.
+Pliki sstate leżą w podkatalogach nazwanych od początku hasha. Nazwa pliku zawiera receptę, architekturę, wersję,
+hash i nazwę taska, np. `sstate:<recepta>:...:<hash>_<task>.tar.zst`.
 
-## Zadanie
+## Pytanie
 
-1. Znajdź w sstate-cache pliki należące do kernela (receptura `linux-raspberrypi`).  TODO: SPRAWDZ
-2. Co się stanie, jeśli usuniesz `build/tmp` i zbudujesz obraz jeszcze raz? A co, jeśli usuniesz też `sstate-cache`?
+Co się stanie, jeśli usuniesz `build/tmp` i zbudujesz obraz jeszcze raz? A co, jeśli usuniesz też `sstate-cache`?
 
 **Nie usuwaj niczego** - to pytanie teoretyczne.

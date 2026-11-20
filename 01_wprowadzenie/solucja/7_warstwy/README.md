@@ -3,9 +3,9 @@
 ## Odpowiedzi
 
 **Nothing RPROVIDES 'python3-flask':** obraz wymaga w czasie działania (runtime, stąd **R**PROVIDES) paczki
-`python3-flask`, a żadna receptura w warstwach projektu jej nie dostarcza. Naprawa: dodać warstwę z tą recepturą.
+`python3-flask`, a żadna recepta w warstwach projektu jej nie dostarcza. Naprawa: dodać warstwę z tą receptą.
 
-**Gdzie jest Flask:** receptura `python3-flask` jest w warstwie `meta-python`, a ta w repozytorium `meta-openembedded`
+**Gdzie jest Flask:** recepta `python3-flask` jest w warstwie `meta-python`, a ta w repozytorium `meta-openembedded`
 (`https://git.openembedded.org/meta-openembedded`). Layer Index pokazuje też zależności warstwy - `meta-python`
 wymaga `meta-oe` (openembedded-layer).
 
@@ -28,7 +28,7 @@ Gotowy JSON: [kurs.conf.json](kurs.conf.json)
 nie jest wersjonowany, a `bitbake-setup update` może go wygenerować od nowa. Stałe zmiany trzymamy w miejscach
 wersjonowanych w git:
 - warstwy, ich wersje i włączone fragmenty - w JSON projektu (`kurs.conf.json`),
-- ustawienia buildu - jako fragmenty konfiguracji we własnej warstwie, w konfiguracji distro albo w recepturze obrazu
+- ustawienia buildu - jako fragmenty konfiguracji we własnej warstwie, w konfiguracji distro albo w recepcie obrazu
   (własną warstwę zrobimy w kolejnych ćwiczeniach).
 
 Mówi o tym nagłówek `local.conf` wygenerowany przez bitbake-setup:
