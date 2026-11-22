@@ -5,9 +5,23 @@ BTW - Jeżeli korzystasz z laptopa - ustaw Power Mode na opcję "Performance"
 Wszystko, co związane z bitbake, uruchamiamy w kontenerze [crops/poky](https://github.com/crops/poky-container).
 Dzięki temu każdy ma identyczne środowisko do budowania, niezależnie od tego, co jest zainstalowane na hoście.
 
-Obraz kontenera i katalog `~/yocto-kurs` masz już z [przygotowania](../00_przygotowanie/przygotowanie.md).
+## Katalog roboczy
+
+Cały kurs robimy w jednym katalogu. Ten katalog będzie podmontowany do kontenera jako `/workdir`. Na hoście:
+
+    mkdir -p ~/yocto-kurs
+    df -hT ~/yocto-kurs
+
+Wymagania:
+- typ systemu plików: `ext4`, `btrfs` albo `xfs`. **Nie** NTFS/exFAT (np. dysk zewnętrzny sformatowany pod Windowsa) -
+  build skończy się błędami uprawnień,
+- wolne miejsce: min. **120 GB**.
+
+Źródło: [Yocto FAQ - Why do I get chmod permission issues?](https://docs.yoctoproject.org/wrynose/ref-manual/faq.html)
 
 ## Odpalanie kontenera
+
+Przy pierwszym uruchomieniu Docker sam pobierze obraz kontenera (ok. 1 GB).
 
     docker run --rm --net=host -e HISTFILE=/workdir/.bash_history -it -v ~/yocto-kurs:/workdir crops/poky:ubuntu-22.04 --workdir=/workdir
 

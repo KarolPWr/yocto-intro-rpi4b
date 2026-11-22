@@ -98,7 +98,12 @@ Wyjście z nudoku: `Q`.
 
 Dodaj do kompilacji nudoku flagi ostrzeżeń `-Wall -Wextra`. Sprawdź w logu kompilacji, czy kompilator je dostał.
 
-@claude dodaj "Podpowiedź", napisz w niej z jakiej zmiennej skorzystać
+<details>
+<summary>Podpowiedź</summary>
+
+Flagi kompilatora C bitbake przekazuje w zmiennej `CFLAGS`.
+
+</details>
 
 Źródła:
 - [Yocto Dev Manual - Creating the Base Recipe Using recipetool create](https://docs.yoctoproject.org/wrynose/dev-manual/new-recipe.html#creating-the-base-recipe-using-recipetool-create)

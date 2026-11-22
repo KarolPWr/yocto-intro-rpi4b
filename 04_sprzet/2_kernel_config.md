@@ -23,11 +23,8 @@ Kernel RPi buduje recepta `linux-raspberrypi`. Uruchom `menuconfig`:
 Za pierwszym razem bitbake rozpakuje i skonfiguruje źródła kernela - to potrwa kilka minut. `menuconfig` otworzy się
 w tym samym terminalu.
 
-W `menuconfig`:
-1. `/` - wyszukiwarka, wpisz `PRINTK_CALLER`, Enter,
-2. wciśnij numer wyniku (`1`) - przeskoczysz do opcji,
-3. spacja - opcja zaznaczona `[*]`,
-4. `Save` (zostaw nazwę `.config`), potem `Exit` aż do wyjścia.
+W `menuconfig` włącz opcję `PRINTK_CALLER`, zapisz konfigurację i wyjdź (obsługa `menuconfig` - jak w ćwiczeniu
+`03_uboot/2_menuconfig`).
 
 ## Fragment
 
