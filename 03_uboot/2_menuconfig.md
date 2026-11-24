@@ -30,8 +30,6 @@ Obsługa `menuconfig`:
 
 W `menuconfig` zmień prompt konsoli U-Boota na własny, np. `kurs> `. Zapisz konfigurację i wyjdź z `menuconfig`.
 
-Podpowiedź: szukaj opcji `SYS_PROMPT`.
-
 ## Fragment
 
     # kontener

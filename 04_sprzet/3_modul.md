@@ -91,11 +91,9 @@ Do zbudowania modułu potrzebny jest katalog buildu kernela - mamy go po ćwicze
 
 ## Test na płytce
 
-Znajdź moduł i paczkę, w której jest:
+Znajdź zbudowany moduł kernela ( plik .ko).
 
-    # kontener
-    oe-pkgdata-util list-pkgs -p kurs-mod
-    find $(bitbake-getvar -r kurs-mod --value D) -name "*.ko"
+Podpowiedź: poszukaj w WORKDIR dla recepty budującej moduł.
 
 Skopiuj `kurs.ko` na płytkę (z hosta; ścieżkę wziętą z `find` zacznij od `~/yocto-kurs` zamiast `/workdir`):
 
