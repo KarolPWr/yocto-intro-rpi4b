@@ -37,6 +37,10 @@ Wzór recepty z serwisem: `consolation_0.0.10.bb` w meta-oe:
     # kontener
     cat /workdir/bitbake-builds/rpi4/layers/meta-openembedded/meta-oe/recipes-support/consolation/consolation_0.0.10.bb
 
+Oraz monkey:
+
+    bitbake-builds/rpi4/layers/meta-openembedded/meta-webserver/recipes-httpd/monkey/monkey_1.8.7.bb
+
 <details>
 <summary>Podpowiedź - serwis w recepcie</summary>
 

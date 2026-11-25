@@ -1,22 +1,17 @@
 # Rozwiązanie: czas startu systemu
 
-Pliki warstwy po ćwiczeniu (z Zadaniem):
+Przykładowy wynik wyzwania. Pliki warstwy po ćwiczeniu:
 
     meta-kurs/
     ├── conf/fragments/kurs.conf
-    ├── recipes-bsp/u-boot/
-    │   ├── files/bootdelay.cfg
-    │   └── u-boot_%.bbappend
     └── recipes-core/
         ├── images/kurs-image.bb
         └── packagegroups/packagegroup-kurs.bb
 
-- Fragment: [meta-kurs/conf/fragments/kurs.conf](meta-kurs/conf/fragments/kurs.conf) - firmware (`BOOT_DELAY`,
-  `BOOT_DELAY_MS`, `DISABLE_SPLASH`) i kernel (`CMDLINE_DEBUG = "quiet"`)
-- U-Boot: [meta-kurs/recipes-bsp/u-boot/u-boot_%.bbappend](meta-kurs/recipes-bsp/u-boot/u-boot_%.bbappend),
-  [files/bootdelay.cfg](meta-kurs/recipes-bsp/u-boot/files/bootdelay.cfg)
+- Fragment: [meta-kurs/conf/fragments/kurs.conf](meta-kurs/conf/fragments/kurs.conf) - bez `RPI_USE_U_BOOT`
+  (bez U-Boota), firmware (`BOOT_DELAY`, `BOOT_DELAY_MS`, `DISABLE_SPLASH`) i kernel (`CMDLINE_DEBUG = "quiet"`)
 - Obraz: [meta-kurs/recipes-core/images/kurs-image.bb](meta-kurs/recipes-core/images/kurs-image.bb) - bez `splash`,
-  maskowane serwisy (z Zadaniem)
+  maskowane serwisy
 - Packagegroup: [meta-kurs/recipes-core/packagegroups/packagegroup-kurs.bb](meta-kurs/recipes-core/packagegroups/packagegroup-kurs.bb) - `systemd-analyze`
 
 ## Odpowiedzi
@@ -33,6 +28,15 @@ ważne jest pierwsze uruchomienie (np. na linii produkcyjnej).
 RPi i U-Boot nie przekazują mu swoich czasów (na PC z UEFI `systemd-analyze` pokazuje też `firmware` i `loader`).
 Dlatego te etapy mierzymy na UART.
 
+**Co tracimy bez U-Boota:**
+- konsolę bootloadera - zmianę parametrów startu, start innego kernela albo z sieci (TFTP) bez flashowania karty,
+- skrypty startowe (`boot.scr`) i środowisko (`uboot.env`) - logikę przed startem kernela,
+- aktualizacje A/B z powrotem do starej wersji (np. RAUC, SWUpdate - licznik startów w U-Boocie),
+- sprawdzanie podpisu kernela przed startem (FIT z podpisem).
+
+Na RPi część tego da się zrobić w firmware (`tryboot`, `autoboot.txt` - wybór partycji boot), ale U-Boot jest
+niezależny od płytki. W produkcie decyzja: zysk czasu kontra elastyczność startu i aktualizacji.
+
 **Ile daje `quiet`:** każdy znak na konsoli UART to 10 bitów (bit startu, 8 bitów danych, bit stopu), czyli przy
 115200 bit/s ok. 11,5 kB/s. Kernel, który pisze na konsolę synchronicznie, czeka na UART. Oszacowanie na płytce
 (przed dodaniem `quiet`):
@@ -41,7 +45,55 @@ Dlatego te etapy mierzymy na UART.
 
 i podziel przez 11520 - wynik w sekundach to górna granica zysku. Ile naprawdę zyskaliśmy - pokazuje pomiar.
 
-## Zadanie - kolejne serwisy
+## Wyzwanie - zmiany w Yocto
+
+### Bez U-Boota
+
+We fragmencie `kurs.conf` nie ma linii `RPI_USE_U_BOOT = "1"`. Na partycji boot `kernel8.img` to kernel
+(`IMAGE_BOOT_FILES` z `rpi-base.inc`: `${KERNEL_IMAGETYPE};${SDIMG_KERNELIMAGE}`).
+
+### Firmware i kernel
+
+Wartości w `config.txt` i `cmdline.txt` ustawiają recepty `rpi-config` i `rpi-cmdline` z meta-raspberrypi. To
+ustawienia płytki - na końcu fragmentu `kurs.conf`:
+
+    # szybszy start: firmware RPi bez czekania i bez ekranu startowego (config.txt)
+    BOOT_DELAY = "0"
+    BOOT_DELAY_MS = "0"
+    DISABLE_SPLASH = "1"
+
+    # szybszy start: kernel bez komunikatów na konsoli (cmdline.txt)
+    CMDLINE_DEBUG = "quiet"
+
+`CMDLINE_DEBUG` to w `rpi-cmdline.bb` miejsce na dodatkowe parametry kernela (domyślnie puste) - tu trafiają też
+`modprobe.blacklist=...` i `initcall_blacklist=...`, jeśli dały zysk, np.:
+
+    CMDLINE_DEBUG = "quiet modprobe.blacklist=<moduł>"
+
+Wyłączenie Wi-Fi - linia `dtoverlay` w `rpi-config_git.bbappend` z ćwiczenia `04_sprzet/1_led_overlay`:
+
+    RPI_EXTRA_CONFIG:append = "\ndtoverlay=kurs-led\ndtoverlay=i2c-sensor,bme280\ndtoverlay=disable-wifi"
+
+Overlay `disable-wifi.dtbo` jest już na partycji boot (`RPI_KERNEL_DEVICETREE_OVERLAYS` w `rpi-base.inc`).
+
+### Userspace
+
+Ekran startowy `psplash` dodaje `core-image-base.bb` (`IMAGE_FEATURES += "splash"`). W `kurs-image.bb`:
+
+    # bez ekranu startowego psplash
+    IMAGE_FEATURES:remove = "splash"
+
+i maskowanie serwisów na gotowym rootfs:
+
+    # serwisy, których płytka nie potrzebuje
+    KURS_MASKED_SERVICES = "ofono.service ..."
+
+    kurs_mask_services() {
+        for s in ${KURS_MASKED_SERVICES}; do
+            systemctl --root=${IMAGE_ROOTFS} mask $s
+        done
+    }
+    ROOTFS_POSTPROCESS_COMMAND += "kurs_mask_services"
 
 Serwisy włączone w `kurs-image` (z `blame`, `critical-chain` i `ls /etc/systemd/system/*.wants/`), których płytka
 nie potrzebuje:
@@ -77,36 +129,35 @@ w którym są logi (`/var/log/messages` -> tylko `journalctl`) - to decyzja o pr
 **Ile kosztuje usunięcie:**
 - `ofono` (i `neard` - NFC, ta sama zasada) - tanio: tylko `packagegroup-base-extended` je dokłada. W recepcie obrazu
   zamiana `packagegroup-base-extended` na `packagegroup-base` (`IMAGE_INSTALL:remove` + `IMAGE_INSTALL +=`) zmienia
-  tylko obraz, bez przebudowy paczek,
+  tylko obraz, bez przebudowy paczek - mieści się w zasadach wyzwania,
 - reszta - zmiana `DISTRO_FEATURES` w distro, czyli przebudowa prawie całego systemu bez cache (ćwiczenie z distro),
-  albo `MACHINE_FEATURES` (`bluetooth`) - przebudowa recept zależnych od maszyny. Na kursie tylko maskujemy, w produkcie
-  - właściwa droga to distro z listą `DISTRO_FEATURES` dobraną od początku projektu.
+  albo `MACHINE_FEATURES` (`bluetooth`) - przebudowa recept zależnych od maszyny. W wyzwaniu tylko maskujemy, w produkcie
+  właściwa droga to distro z listą `DISTRO_FEATURES` dobraną od początku projektu.
 
 `IMAGE_INSTALL:remove = "avahi-daemon"` nie zadziała - `avahi-daemon` nie jest w `IMAGE_INSTALL` wprost, tylko
 w `RDEPENDS` packagegroupy, a tych menedżer paczek musi dociągnąć.
 
 Źródła: openembedded-core wrynose `meta/recipes-core/packagegroups/packagegroup-base.bb`,
 `meta/classes-recipe/core-image.bbclass`, `meta/conf/bitbake.conf` (`COMBINED_FEATURES`); meta-raspberrypi wrynose
-`conf/machine/include/rpi-base.inc` (`MACHINE_FEATURES`); [systemctl(1)](https://www.freedesktop.org/software/systemd/man/latest/systemctl.html)
-(`mask`).
+`conf/machine/include/rpi-base.inc` (`MACHINE_FEATURES`, `IMAGE_BOOT_FILES`, `RPI_KERNEL_DEVICETREE_OVERLAYS`);
+[systemctl(1)](https://www.freedesktop.org/software/systemd/man/latest/systemctl.html) (`mask`);
+[Raspberry Pi Documentation - autoboot.txt](https://www.raspberrypi.com/documentation/computers/config_txt.html#autoboot-txt)
+(`tryboot`).
 
-## Czego nie robimy na kursie (pełny rebuild)
+## Czego nie robimy w wyzwaniu (pełny rebuild)
 
 - odchudzenie kernela: sterowniki z `initcall_debug` jako moduły albo wyłączone, mniej opcji w konfiguracji,
 - `DISTRO_FEATURES` dobrane do produktu (bez `bluetooth`, `nfs`, `zeroconf`, `3g`, `nfc`...),
-- inne: rootfs tylko do odczytu, mniejszy obraz (mniej do wczytania z karty), kernel bez U-Boota (firmware RPi umie
-  uruchomić kernel sam - tak było do dnia 3).
+- inne: rootfs tylko do odczytu, mniejszy obraz (mniej do wczytania z karty).
 
 ## Stan po ćwiczeniu (jeśli zostałeś w tyle)
 
 Na hoście:
 
-    cp -r ~/yocto-kurs/yocto-intro-rpi4b/06_czas_startu/solucja/1_czas_startu/meta-kurs/. ~/yocto-kurs/meta-kurs/
+    cp -r ~/yocto-kurs/yocto-intro-rpi4b/06_debugowanie/solucja/1_czas_startu/meta-kurs/. ~/yocto-kurs/meta-kurs/
     cd ~/yocto-kurs/meta-kurs
     git add .
-    git commit -m "szybszy start: firmware, U-Boot, kernel, serwisy"
-
-Jeśli masz już `u-boot_%.bbappend` z ćwiczeń z U-Bootem, `cp` go nadpisze - dopisz z powrotem swoje pliki do `SRC_URI`.
+    git commit -m "szybszy start"
 
 W kontenerze:
 
@@ -114,3 +165,5 @@ W kontenerze:
     bitbake kurs-image
 
 Wgranie na kartę - jak w ćwiczeniu 5 z dnia 1, plik `kurs-image-raspberrypi4-64.rootfs.wic.bz2`.
+
+Do ćwiczeń z U-Bootem (`03_uboot`) - dopisz z powrotem `RPI_USE_U_BOOT = "1"` we fragmencie.

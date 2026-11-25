@@ -1,13 +1,23 @@
 # Czas startu systemu
 
-Skracamy czas od podłączenia zasilania do `login:`. Zasada: **najpierw pomiar, potem zmiana, potem znowu pomiar**.
-Każdy etap startu skracamy osobno:
+**Wyzwanie: kto najbardziej skróci czas od podłączenia zasilania do `login:`?**
+
+Zasada: **najpierw pomiar, potem zmiana, potem znowu pomiar**. Start składa się z etapów, każdy mierzymy i skracamy
+osobno:
 
     firmware RPi -> U-Boot -> kernel -> systemd (userspace) -> login:
 
-Najpierw testujemy zmiany szybko na płytce (bez buildu), a potem zapisujemy w Yocto te, które coś dały.
-
 Wymagania: U-Boot (ćwiczenie `03_uboot/1_uboot`), obraz `kurs-image` (`05_obraz_distro`).
+
+## Zasady wyzwania
+
+- wynik: czas do `login:` na UART zmierzony `ts` (niżej), mediana z 3 startów, bez pierwszego startu po wgraniu,
+- po starcie działa: logowanie na UART, SSH przez Ethernet i `bme280-log`,
+- liczy się obraz zbudowany w Yocto i wgrany na kartę, a nie ręczne zmiany na płytce,
+- bez pełnego rebuildu: nie zmieniamy `DISTRO_FEATURES`, distro, `MACHINE` ani konfiguracji kernela. Zmieniamy
+  `config.txt`, `cmdline.txt`, zawartość obrazu `kurs-image` i pliki w rootfs.
+
+Na koniec wpisz na czacie swój wynik i listę zmian.
 
 Ustaw środowisko:
 
@@ -54,7 +64,7 @@ Znajdź w logu granice etapów:
 
     grep -E 'U-Boot 20|Starting kernel' start_2.log
 
-- od zera do `U-Boot 20...` - firmware RPi (plus Twój czas reakcji przy zasilaniu - mierz 2-3 razy),
+- od zera do `U-Boot 20...` - firmware RPi (plus Twój czas reakcji przy zasilaniu - dlatego mediana z 3 startów),
 - od `U-Boot 20...` do `Starting kernel` - U-Boot.
 
 ## Pomiar w systemie
@@ -81,197 +91,132 @@ Na hoście:
     scp root@<ADRES_IP>:/tmp/start.svg .
     xdg-open start.svg
 
+Wszystkie komunikaty kernela i systemd z czasem od startu kernela - widać, gdzie są przerwy:
+
+    journalctl -b -o short-monotonic
+
 Przepisz wyniki do tabeli:
 
-| Etap | Skąd | Przed | Po |
-|---|---|---|---|
-| firmware RPi | `ts`: do `U-Boot 20...` | | |
-| U-Boot | `ts`: do `Starting kernel` | | |
-| kernel | `systemd-analyze time` | | |
-| userspace | `systemd-analyze time` | | |
-| razem do `login:` | `ts`: ostatnia linia | | |
+| Etap | Skąd | Przed | Bez U-Boota | Wynik |
+|---|---|---|---|---|
+| firmware RPi | `ts`: do pierwszej linii (z U-Bootem: `U-Boot 20...`, bez `quiet`) | | | |
+| U-Boot | `ts`: do `Starting kernel` | | - | - |
+| kernel | `systemd-analyze time` | | | |
+| userspace | `systemd-analyze time` | | | |
+| razem do `login:` | `ts`: ostatnia linia | | | |
 
-## Szybkie testy na płytce
+## Wyrzucamy U-Boota
 
-Każdą zmianę sprawdź osobno: zmiana, restart, pomiar (`ts`, `systemd-analyze time`). Zmiana bez zysku nie trafia do
-Yocto.
+U-Boot nie jest potrzebny, żeby RPi wystartował - firmware RPi sam ładuje kernel (tak startowaliśmy do dnia 3).
+Zobacz, ile kosztuje U-Boot w Twojej tabeli.
 
-Partycja boot jest zamontowana w `/boot` - tam są `config.txt` (czyta firmware) i `cmdline.txt` (parametry kernela;
-z U-Bootem też, bo U-Boot bierze je z device tree od firmware).
+Z U-Bootem plik `kernel8.img` na partycji boot to U-Boot, a kernel leży obok jako `Image`. Test na płytce - każ
+firmware ładować od razu kernel:
 
-### Firmware RPi
-
-Według dokumentacji meta-raspberrypi firmware czeka domyślnie sekundę przed załadowaniem kernela (u nas - U-Boota).
-Na płytce:
-
-    cat >> /boot/config.txt << 'EOF'
-    boot_delay=0
-    boot_delay_ms=0
-    disable_splash=1
-    EOF
+    ls /boot
+    echo "kernel=Image" >> /boot/config.txt
     sync
     reboot
 
-`disable_splash` wyłącza tęczowy ekran na HDMI.
+Zmierz start (`ts`, `systemd-analyze time`) i wpisz do kolumny „Bez U-Boota”. W logu nie ma już `U-Boot 20...`
+ani `Starting kernel`. Parametry kernela nadal pochodzą z `cmdline.txt` - firmware przekazuje je kernelowi tak samo jak
+wcześniej U-Bootowi.
 
-### U-Boot
+**Q: Co tracimy, wyrzucając U-Boota?**
 
-U-Boot odlicza 2 sekundy (`Hit any key to stop autoboot`). W picocomie zatrzymaj autostart i:
+W Yocto: U-Boota włączyliśmy w ćwiczeniu `03_uboot/1_uboot` we fragmencie
+`~/yocto-kurs/meta-kurs/conf/fragments/kurs.conf`. Usuń z niego:
 
-    setenv bootdelay 0
-    saveenv
-    boot
+    # bootloader U-Boot między firmware RPi a kernelem
+    RPI_USE_U_BOOT = "1"
 
-`bootdelay 0` - bez odliczania, ale wciśnięty klawisz nadal zatrzyma start. Jest też `-2` - bez sprawdzania
-klawisza, ale wtedy nie dostaniesz się do konsoli U-Boota.
-
-### Kernel
-
-Kernel wypisuje na konsolę UART kilkaset linii. Parametr `quiet` zostawia tylko błędy (wszystko jest dalej
-w `dmesg`). Na płytce:
-
-    cat /boot/cmdline.txt
-    sed -i 's/$/ quiet/' /boot/cmdline.txt
-    cat /boot/cmdline.txt
-    sync
-    reboot
-
-Sprawdź też, co kernel robi najdłużej. Dodaj `initcall_debug` (kernel zapisze czas każdej funkcji startowej):
-
-    sed -i 's/$/ initcall_debug/' /boot/cmdline.txt
-    sync
-    reboot
-
-Po starcie - 10 najwolniejszych:
-
-    dmesg | grep 'initcall .* after' | sed -E 's/.*initcall (.*) returned .* after ([0-9]+) usecs/\2 \1/' | sort -n | tail -10
-
-Wyrzucenie wolnych sterowników to zmiana konfiguracji kernela (pełny rebuild) - tego na kursie nie robimy.
-Usuń `initcall_debug`:
-
-    sed -i 's/ initcall_debug//' /boot/cmdline.txt
-    sync
-    reboot
-
-### Userspace
-
-Wróć do `systemd-analyze blame`. Na górze listy są m.in. serwisy, których nasza płytka nie potrzebuje. Przykład:
-`ofono` obsługuje modemy GSM - na RPi 4B nie ma modemu.
-
-    systemctl mask --now ofono.service
-    reboot
-
-`disable` usuwa tylko automatyczny start - serwis może nadal uruchomić inny serwis, socket albo D-Bus. `mask` blokuje
-każdy start (link do `/dev/null`).
-
-Nie maskuj `systemd-networkd` ani `dropbear` - stracisz SSH.
-
-## Zmiany w Yocto
-
-Zmiany z płytki znikną po następnym wgraniu obrazu. Zapisz w Yocto te, które dały zysk.
-
-### Firmware i kernel
-
-Wartości w `config.txt` i `cmdline.txt` ustawiają recepty `rpi-config` i `rpi-cmdline` z meta-raspberrypi. Zobacz,
-jakie zmienne obsługują:
+Sprawdź, co trafi na partycję boot:
 
     # kontener
-    grep -n -E 'BOOT_DELAY|DISABLE_SPLASH' /workdir/bitbake-builds/rpi4/layers/meta-raspberrypi/recipes-bsp/bootfiles/rpi-config_git.bb
+    bitbake-getvar -r kurs-image --value IMAGE_BOOT_FILES
+
+Bez `RPI_USE_U_BOOT` meta-raspberrypi kopiuje kernel jako `kernel8.img`, bez `u-boot.bin` i `boot.scr`. Kernel nie
+skompiluje się od nowa - na `raspberrypi4-64` kernel to `Image` z U-Bootem i bez.
+
+Nie buduj jeszcze - zbudujesz obraz raz, razem z resztą zmian z wyzwania.
+
+Do ćwiczeń z U-Bootem (`03_uboot`) wrócisz, dopisując linię z powrotem.
+
+## Co można skracać
+
+Każdą zmianę sprawdź najpierw na płytce: zmiana, restart, pomiar. Zmiana bez zysku nie trafia do Yocto.
+
+Partycja boot jest zamontowana w `/boot` - tam są `config.txt` (czyta firmware) i `cmdline.txt` (parametry kernela).
+Jeśli płytka po zmianie nie wstanie, włóż kartę do czytnika na hoście i cofnij zmianę na partycji boot.
+
+### Firmware RPi (`config.txt`)
+
+- `boot_delay=0` i `boot_delay_ms=0` - według dokumentacji meta-raspberrypi firmware czeka domyślnie sekundę przed
+  załadowaniem kernela,
+- `disable_splash=1` - bez tęczowego ekranu na HDMI,
+- `dtoverlay=disable-wifi` - wyłącza Wi-Fi (łączymy się przez Ethernet): kernel nie ładuje sterownika ani firmware
+  Wi-Fi.
+
+W Yocto - zmienne recepty `rpi-config` albo `RPI_EXTRA_CONFIG` (ćwiczenie `04_sprzet/1_led_overlay`):
+
+    # kontener
+    grep -n -E 'BOOT_DELAY|DISABLE_SPLASH|RPI_EXTRA_CONFIG' /workdir/bitbake-builds/rpi4/layers/meta-raspberrypi/recipes-bsp/bootfiles/rpi-config_git.bb
+
+### Kernel (`cmdline.txt`)
+
+- `quiet` - kernel wypisuje na konsolę UART kilkaset linii, `quiet` zostawia tylko błędy (wszystko jest dalej
+  w `dmesg`),
+- `initcall_debug` - tylko do analizy: kernel zapisuje czas każdej funkcji startowej (też przy ładowaniu modułów).
+  Po starcie - 10 najwolniejszych:
+
+      dmesg | grep 'initcall .* after' | sed -E 's/.*initcall (.*) returned .* after ([0-9]+) usecs/\2 \1/' | sort -n | tail -10
+
+- `modprobe.blacklist=<moduł>,<moduł>` - moduł się nie załaduje (lista załadowanych: `lsmod`),
+- `initcall_blacklist=<funkcja>` - kernel pominie funkcję startową wbudowanego sterownika. Tylko dla sterowników,
+  których płytka na pewno nie potrzebuje.
+
+Parametry dopisujesz na końcu jedynej linii `cmdline.txt`, np.:
+
+    sed -i 's/$/ quiet/' /boot/cmdline.txt
+
+Nie usuwaj `console=serial0,115200` - stracisz logowanie przez UART.
+
+W Yocto - zmienne recepty `rpi-cmdline`:
+
+    # kontener
     grep -n 'CMDLINE' /workdir/bitbake-builds/rpi4/layers/meta-raspberrypi/recipes-bsp/bootfiles/rpi-cmdline.bb
 
-To ustawienia płytki - dopisz na końcu fragmentu `~/yocto-kurs/meta-kurs/conf/fragments/kurs.conf`:
+### Userspace (systemd)
 
-    # szybszy start: firmware RPi bez czekania i bez ekranu startowego (config.txt)
-    BOOT_DELAY = "0"
-    BOOT_DELAY_MS = "0"
-    DISABLE_SPLASH = "1"
+- serwisy, których płytka nie potrzebuje - szukaj w `systemd-analyze blame` i `critical-chain`. Przykład: `ofono`
+  obsługuje modemy GSM - na RPi 4B nie ma modemu:
 
-    # szybszy start: kernel bez komunikatów na konsoli (cmdline.txt)
-    CMDLINE_DEBUG = "quiet"
+      systemctl mask --now ofono.service
+      reboot
 
-`CMDLINE_DEBUG` to w `rpi-cmdline.bb` miejsce na dodatkowe parametry kernela (domyślnie puste).
+  `disable` usuwa tylko automatyczny start - serwis może nadal uruchomić inny serwis, socket albo D-Bus. `mask` blokuje
+  każdy start (link do `/dev/null`). Nie maskuj `systemd-networkd` ani `dropbear` - stracisz SSH,
+- ekran startowy `psplash` - dodaje go `core-image-base.bb` (`IMAGE_FEATURES += "splash"`),
+- mniej programów w obrazie - patrz pytanie niżej.
 
-### U-Boot
+W Yocto - maskowanie na gotowym rootfs, tak jak nazwa hosta w ćwiczeniu z obrazem (`ROOTFS_POSTPROCESS_COMMAND`
+w `kurs-image.bb`).
 
-Domyślne `bootdelay` pochodzi z konfiguracji U-Boota (`CONFIG_BOOTDELAY`). Środowisko domyślne zbudowanego U-Boota
-jest w katalogu deploy:
-
-    # kontener
-    grep bootdelay /workdir/bitbake-builds/rpi4/build/tmp/deploy/images/raspberrypi4-64/u-boot-initial-env
-
-Recepta U-Boota łączy pliki `.cfg` z `SRC_URI` z konfiguracją domyślną - tak samo jak kernel w ćwiczeniu
-`04_sprzet/2_kernel_config`. Utwórz:
-
-    meta-kurs/recipes-bsp/u-boot/
-    ├── files/bootdelay.cfg
-    └── u-boot_%.bbappend
-
-`files/bootdelay.cfg`:
-
-    CONFIG_BOOTDELAY=0
-
-`u-boot_%.bbappend`:
-
-    FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
-
-    SRC_URI += "file://bootdelay.cfg"
-
-Jeśli masz już `u-boot_%.bbappend` z wcześniejszego ćwiczenia, dopisz tylko `file://bootdelay.cfg` do `SRC_URI`.
-
-### Userspace
-
-Ekran startowy `psplash` dodaje `core-image-base.bb` (`IMAGE_FEATURES += "splash"`). Maskowanie serwisów robimy na
-gotowym rootfs, tak jak nazwę hosta w ćwiczeniu z obrazem. Dopisz w `~/yocto-kurs/meta-kurs/recipes-core/images/kurs-image.bb`
-(pod `IMAGE_FEATURES += "ssh-server-dropbear"`):
-
-    # bez ekranu startowego psplash
-    IMAGE_FEATURES:remove = "splash"
-
-i na końcu:
-
-    # serwisy, których płytka nie potrzebuje
-    KURS_MASKED_SERVICES = "ofono.service"
+<details>
+<summary>Podpowiedź: maskowanie w obrazie</summary>
 
     kurs_mask_services() {
-        for s in ${KURS_MASKED_SERVICES}; do
-            systemctl --root=${IMAGE_ROOTFS} mask $s
-        done
+        systemctl --root=${IMAGE_ROOTFS} mask ofono.service
     }
     ROOTFS_POSTPROCESS_COMMAND += "kurs_mask_services"
 
 `systemctl --root` działa na katalogu z rootfs, a nie na systemie, na którym działa - tak samo włącza serwisy sam
 Yocto przy budowaniu obrazu.
 
-Zapisz zmiany w git (na hoście):
+</details>
 
-    cd ~/yocto-kurs/meta-kurs
-    git add .
-    git commit -m "szybszy start: firmware, U-Boot, kernel, serwisy"
-
-### Budowanie
-
-    # kontener
-    bitbake kurs-image
-
-Sprawdź przed wgraniem:
-
-    # kontener
-    cd /workdir/bitbake-builds/rpi4/build/tmp/deploy/images/raspberrypi4-64/
-    grep -E '^(boot_delay|disable_splash)' bootfiles/config.txt
-    cat bootfiles/cmdline.txt
-    grep bootdelay u-boot-initial-env
-    ls -l $(bitbake-getvar -r kurs-image --value IMAGE_ROOTFS)/etc/systemd/system/ofono.service
-    cd -
-
-Wgraj obraz na kartę. Zmierz drugi start (`ts` i `systemd-analyze time`) i uzupełnij kolumnę „Po” w tabeli.
-
-## Zadanie
-
-Skróć jeszcze userspace. Przejdź przez `systemd-analyze blame` i `critical-chain` i zamaskuj w obrazie serwisy, których
-płytka nie potrzebuje (SSH przez Ethernet i nasz `bme280-log` mają działać). Przy każdym zapisz jednym zdaniem, czym się zajmuje i czemu
-go nie potrzebujemy. Zmierz wynik.
-
-**Q: Lepiej byłoby tych programów w ogóle nie instalować. Skąd się biorą w obrazie i ile kosztowałoby ich usunięcie?**
+**Q: Lepiej byłoby niepotrzebnych programów w ogóle nie instalować. Skąd się biorą w obrazie i ile kosztowałoby ich
+usunięcie?**
 
 <details>
 <summary>Podpowiedź</summary>
@@ -284,16 +229,41 @@ Nie są w `IMAGE_INSTALL` wprost. Zobacz, co ciągnie `core-image-base` i od cze
 
 </details>
 
+## Budowanie i wynik
+
+Zapisz zmiany w git (na hoście):
+
+    cd ~/yocto-kurs/meta-kurs
+    git add .
+    git commit -m "szybszy start"
+
+Zbuduj obraz:
+
+    # kontener
+    bitbake kurs-image
+
+Sprawdź przed wgraniem, czy zmiany są na partycji boot:
+
+    # kontener
+    cd /workdir/bitbake-builds/rpi4/build/tmp/deploy/images/raspberrypi4-64/
+    cat bootfiles/config.txt | grep -v '^#' | grep -v '^$'
+    cat bootfiles/cmdline.txt
+    cd -
+
+Wgraj obraz na kartę. Zmierz 3 starty po pierwszym (`ts`), uzupełnij kolumnę „Wynik” i wpisz medianę na czacie.
+
 Źródła:
 - [meta-raspberrypi - Extra build config](https://github.com/agherzan/meta-raspberrypi/blob/wrynose/docs/extra-build-config.md)
-  (Boot delay, Disable splash screen), `recipes-bsp/bootfiles/rpi-config_git.bb`, `rpi-cmdline.bb`,
-  `recipes-bsp/u-boot/u-boot_%.bbappend` (`CONFIG_BOOTDELAY=-2` dla RPi 5)
-- [Raspberry Pi Documentation - config.txt: disable_splash](https://www.raspberrypi.com/documentation/computers/config_txt.html#disable_splash)
-- [U-Boot - Environment Variables](https://docs.u-boot.org/en/latest/usage/environment.html) (`bootdelay`),
-  U-Boot v2026.01 `boot/Kconfig` (`BOOTDELAY`)
-- [Linux - kernel parameters](https://docs.kernel.org/admin-guide/kernel-parameters.html) (`quiet`, `initcall_debug`)
+  (Boot delay, Disable splash screen, Boot to U-Boot), `conf/machine/include/rpi-base.inc` (`IMAGE_BOOT_FILES`,
+  `KERNEL_IMAGETYPE`), `conf/machine/raspberrypi4-64.conf`, `recipes-bsp/bootfiles/rpi-config_git.bb`, `rpi-cmdline.bb`
+- [Raspberry Pi Documentation - config.txt](https://www.raspberrypi.com/documentation/computers/config_txt.html)
+  (`kernel`, `disable_splash`, `dtoverlay`), [overlays/README](https://github.com/raspberrypi/linux/blob/rpi-6.18.y/arch/arm/boot/dts/overlays/README)
+  (`disable-wifi`)
+- [Linux - kernel parameters](https://docs.kernel.org/admin-guide/kernel-parameters.html) (`quiet`, `initcall_debug`,
+  `initcall_blacklist`), [modprobe.d(5)](https://man7.org/linux/man-pages/man5/modprobe.d.5.html) (`modprobe.blacklist`)
 - [systemd-analyze(1)](https://www.freedesktop.org/software/systemd/man/latest/systemd-analyze.html),
-  [systemctl(1)](https://www.freedesktop.org/software/systemd/man/latest/systemctl.html) (`mask`, `--root`)
+  [systemctl(1)](https://www.freedesktop.org/software/systemd/man/latest/systemctl.html) (`mask`, `--root`),
+  [journalctl(1)](https://www.freedesktop.org/software/systemd/man/latest/journalctl.html) (`short-monotonic`)
 - openembedded-core wrynose `meta/recipes-core/images/core-image-base.bb`, `meta/classes-recipe/rootfs-postcommands.bbclass`,
-  `meta/recipes-bsp/u-boot/u-boot-configure.inc`, `meta/recipes-core/systemd/systemd_259.5.bb` (`systemd-analyze`)
+  `meta/recipes-core/systemd/systemd_259.5.bb` (`systemd-analyze`)
 - `moreutils` - `man ts`

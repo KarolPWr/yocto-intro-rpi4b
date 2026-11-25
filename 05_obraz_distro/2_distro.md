@@ -47,27 +47,11 @@ W `~/yocto-kurs/yocto-intro-rpi4b/kurs.conf.json` zamień w `oe-fragments` `"dis
     bitbake-setup update
     cat conf/toolcfg.conf
 
-Sprawdź distro i porównaj `DISTRO_FEATURES`:
+Sprawdź, że distro się zmieniło, a `DISTRO_FEATURES` nie:
 
     # kontener
     bitbake-getvar --value DISTRO
-    bitbake-getvar --value DISTROOVERRIDES
     bitbake-getvar --value DISTRO_FEATURES | diff /tmp/distro_features.przed - && echo "bez zmian"
-
-`poky-altcfg.conf` ustawia `DISTROOVERRIDES = "poky:poky-altcfg"`, a nasze distro to dziedziczy. Sprawdź, co by się
-stało, gdyby distro miało tylko własny override. Dopisz na końcu `kurs.conf` (tymczasowo):
-
-    DISTROOVERRIDES = "kurs"
-
-i jeszcze raz:
-
-    # kontener
-    bitbake-getvar --value INIT_MANAGER
-    bitbake-getvar --value DISTRO_FEATURES | diff /tmp/distro_features.przed -
-
-**Q: Skąd ta różnica? Ile kosztowałby build z taką konfiguracją?**
-
-Usuń dopisaną linię i sprawdź, że `DISTRO_FEATURES` znów są bez zmian.
 
 Teraz, gdy licencja jest w distro, usuń `LICENSE_FLAGS_ACCEPTED` z fragmentu
 `~/yocto-kurs/meta-kurs/conf/fragments/kurs.conf` - akceptowane licencje to polityka, a nie płytka.
@@ -83,23 +67,11 @@ Zapisz zmiany w git (na hoście):
     # kontener
     bitbake kurs-image
 
-Obserwuj, co bitbake buduje. Prawie wszystko przychodzi z sstate, ale kilka recept buduje się od nowa.
-
-**Q: Które recepty zbudowały się od nowa i dlaczego akurat te?**
-
-<details>
-<summary>Podpowiedź</summary>
-
-Zmieniliśmy `DISTRO` i `DISTRO_NAME`. Poszukaj recept, które ich używają:
-
-    # kontener
-    grep -rln 'DISTRO_NAME\|${DISTRO}' /workdir/bitbake-builds/rpi4/layers/openembedded-core/meta/recipes-core/
-
-</details>
-
 ## Na płytce
 
-Wgraj obraz na kartę tak jak w ćwiczeniu 5 z dnia 1. Plik ma nową nazwę: `kurs-image-raspberrypi4-64.rootfs.wic.bz2`.
+Wgraj obraz na kartę tak jak w ćwiczeniu 5 z dnia 1. 
+
+**UWAGA!** Plik ma nową nazwę: `kurs-image-raspberrypi4-64.rootfs.wic.bz2`.
 
 Sprawdź, czy wszystko z poprzednich dni działa jak wcześniej:
 
@@ -109,15 +81,10 @@ Sprawdź, czy wszystko z poprzednich dni działa jak wcześniej:
     lsmod | grep kurs
     cat /sys/class/leds/kurs/trigger
 
-## Zadanie
-
-Nazwa `Kurs Yocto` jest na płytce w kilku miejscach. Znajdź co najmniej trzy - w systemie i w logach startu na UART.
-
 Źródła:
 - [Yocto Dev Manual - Creating Your Own Distribution](https://docs.yoctoproject.org/wrynose/dev-manual/custom-distribution.html)
 - [Yocto Reference - DISTRO](https://docs.yoctoproject.org/wrynose/ref-manual/variables.html#term-DISTRO),
   [DISTRO_NAME](https://docs.yoctoproject.org/wrynose/ref-manual/variables.html#term-DISTRO_NAME),
-  [DISTROOVERRIDES](https://docs.yoctoproject.org/wrynose/ref-manual/variables.html#term-DISTROOVERRIDES),
   [DISTRO_FEATURES](https://docs.yoctoproject.org/wrynose/ref-manual/variables.html#term-DISTRO_FEATURES)
 - [Yocto Dev Manual - Creating New Configuration Fragments](https://docs.yoctoproject.org/wrynose/dev-manual/creating-fragments.html)
   (fragmenty wbudowane `machine/` i `distro/`)

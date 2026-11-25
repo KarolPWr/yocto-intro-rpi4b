@@ -95,8 +95,6 @@ Porównaj listę paczek z obrazem z poprzednich dni:
 `core-image-base` w katalogu deploy to jeszcze obraz z poprzedniego buildu (z naszymi programami), więc różnic
 powinno być niewiele.
 
-**Q: Czy zawartość `kurs-image` jest taka sama jak `core-image-base` przed porządkami? Jeśli nie - co się zmieniło?**
-
 Od teraz budujemy `kurs-image`. Obraz wgramy w następnym ćwiczeniu, razem z własnym distro. Zapisz zmiany w git
 (na hoście):
 

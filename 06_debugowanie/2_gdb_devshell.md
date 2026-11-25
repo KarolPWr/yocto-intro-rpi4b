@@ -147,7 +147,7 @@ W gdb:
 
 `run` uruchamia program, gdb zatrzyma go w miejscu błędu. `bt` (backtrace) pokazuje stos wywołań - ramka `#0` to
 funkcja, w której program się wysypał, niżej - kto ją wywołał. Przejdź do ramki z naszą funkcją `read_temp`
-i obejrzyj kod oraz zmienne:
+i obejrzyj kod oraz zmienne (numer ramki bez `#`, np. `frame 2`):
 
     frame <numer ramki>
     list
@@ -156,14 +156,9 @@ i obejrzyj kod oraz zmienne:
     quit
 
 Jeśli zamiast wartości zobaczysz `<optimized out>` - kompilator (`-O2`) nie zostawił tej zmiennej w pamięci.
+Ramka `#0` jest w glibc, która nie ma w obrazie źródeł (`iofgets.c: No such file or directory`) - to normalne.
 
-Program w `/usr/bin` nie ma informacji do debugowania, a mimo to gdb pokazał nazwy funkcji, numery linii i kod.
-Zobacz, skąd je wziął:
-
-    ls -l /usr/bin/kurs-temp /usr/bin/.debug/kurs-temp
-    ls -R /usr/src/debug/kurs-temp
-
-**Q: Recepta `hello` z dnia 2 kompiluje bez `${CFLAGS}`. Co pokazałby gdb dla `hello`?**
+Zadanie: Namierz błąd za pomocą GDB. 
 
 ## devshell
 
@@ -198,3 +193,29 @@ wysypać.
   [EXTRA_IMAGE_FEATURES](https://docs.yoctoproject.org/wrynose/ref-manual/variables.html#term-EXTRA_IMAGE_FEATURES),
   [PACKAGE_DEBUG_SPLIT_STYLE](https://docs.yoctoproject.org/wrynose/ref-manual/variables.html#term-PACKAGE_DEBUG_SPLIT_STYLE)
 - [GDB - Backtraces](https://sourceware.org/gdb/current/onlinedocs/gdb.html/Backtrace.html)
+
+## gdb - ściągawka
+
+| Komenda | Skrót | Co robi |
+|---|---|---|
+| `gdb --args prog arg1 arg2` | | uruchamia gdb z programem i jego argumentami |
+| `run` | `r` | uruchamia program |
+| `start` | | uruchamia program i zatrzymuje go na początku `main` |
+| `bt` | | stos wywołań (backtrace) |
+| `frame 2` | `f 2` | przejście do ramki nr 2 (numer bez `#`) |
+| `up` / `down` | | ramka wyżej / niżej |
+| `list` | `l` | kod wokół bieżącej linii |
+| `print dev` | `p dev` | wartość zmiennej lub wyrażenia |
+| `info locals` | | zmienne lokalne bieżącej ramki |
+| `info args` | | argumenty bieżącej funkcji |
+| `break kurs-temp.c:38` | `b kurs-temp.c:38` | breakpoint w linii (albo `b read_temp` - na funkcji) |
+| `info breakpoints` | `i b` | lista breakpointów |
+| `delete 1` | `d 1` | usuwa breakpoint nr 1 (`d` - wszystkie) |
+| `continue` | `c` | wznawia program do następnego breakpointu |
+| `next` | `n` | następna linia, bez wchodzenia do funkcji |
+| `step` | `s` | następna linia, z wchodzeniem do funkcji |
+| `finish` | | wykonuje funkcję do końca i wraca do wywołującej |
+| `watch zmienna` | | zatrzymuje program, gdy zmienna się zmieni |
+| `quit` | `q` | wyjście z gdb |
+
+`Enter` na pustej linii powtarza ostatnią komendę (wygodne przy `n` i `s`).

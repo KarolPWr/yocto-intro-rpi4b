@@ -13,9 +13,9 @@ Pliki warstwy po ćwiczeniu (z Zadaniem):
 - Fragment po porządkach: [meta-kurs/conf/fragments/kurs.conf](meta-kurs/conf/fragments/kurs.conf) - zostały
   licencja (do distro w następnym ćwiczeniu) i ustawienia płytki.
 
-## Odpowiedzi
+## Porównanie manifestów
 
-**`kurs-image` a `core-image-base` sprzed porządków:** te same paczki, plus jedna nowa - `packagegroup-kurs`
+`kurs-image` a `core-image-base` sprzed porządków: te same paczki, plus jedna nowa - `packagegroup-kurs`
 (pusta paczka, która ciągnie nasze programy przez `RDEPENDS`). Nic nie zginęło - zmieniło się miejsce, w którym
 opisujemy zawartość. `diff` manifestów powinien pokazać jedną linię:
 
