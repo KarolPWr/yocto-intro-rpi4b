@@ -24,10 +24,6 @@ Przykładowy wynik wyzwania. Pliki warstwy po ćwiczeniu:
 Mierzymy drugi i kolejne starty - tak startuje urządzenie u klienta. Pierwszy start warto zmierzyć osobno, jeśli
 ważne jest pierwsze uruchomienie (np. na linii produkcyjnej).
 
-**`systemd-analyze time` nie pokazuje firmware RPi ani U-Boota.** Kernel liczy czas od swojego startu, a firmware
-RPi i U-Boot nie przekazują mu swoich czasów (na PC z UEFI `systemd-analyze` pokazuje też `firmware` i `loader`).
-Dlatego te etapy mierzymy na UART.
-
 **Co tracimy bez U-Boota:**
 - konsolę bootloadera - zmianę parametrów startu, start innego kernela albo z sieci (TFTP) bez flashowania karty,
 - skrypty startowe (`boot.scr`) i środowisko (`uboot.env`) - logikę przed startem kernela,

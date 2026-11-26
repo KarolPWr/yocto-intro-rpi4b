@@ -1,9 +1,8 @@
 # Czas startu systemu
 
-**Wyzwanie: kto najbardziej skróci czas od podłączenia zasilania do `login:`?**
+**Wyzwanie: kto najbardziej skróci czas startu systemu?**
 
-Zasada: **najpierw pomiar, potem zmiana, potem znowu pomiar**. Start składa się z etapów, każdy mierzymy i skracamy
-osobno:
+Zasada: **najpierw pomiar, potem zmiana, potem znowu pomiar**. Start składa się z etapów, każdy skracamy osobno:
 
     firmware RPi -> U-Boot -> kernel -> systemd (userspace) -> login:
 
@@ -11,7 +10,7 @@ Wymagania: U-Boot (ćwiczenie `03_uboot/1_uboot`), obraz `kurs-image` (`05_obraz
 
 ## Zasady wyzwania
 
-- wynik: czas do `login:` na UART zmierzony `ts` (niżej), mediana z 3 startów, bez pierwszego startu po wgraniu,
+- wynik: czas z `systemd-analyze time` (kernel + userspace), mediana z 3 startów, bez pierwszego startu po wgraniu,
 - po starcie działa: logowanie na UART, SSH przez Ethernet i `bme280-log`,
 - liczy się obraz zbudowany w Yocto i wgrany na kartę, a nie ręczne zmiany na płytce,
 - bez pełnego rebuildu: nie zmieniamy `DISTRO_FEATURES`, distro, `MACHINE` ani konfiguracji kernela. Zmieniamy
@@ -37,39 +36,9 @@ Paczka jest już zbudowana (recepta `systemd`), więc przebuduje się tylko pack
 
 Wgraj obraz na kartę tak jak w ćwiczeniu 5 z dnia 1.
 
-## Pomiar z UART
+## Pomiar
 
-Do znaczników czasu na hoście użyjemy `ts` z pakietu `moreutils`:
-
-    sudo apt install moreutils
-
-Zamknij picocom (port może mieć otwarty tylko jeden program). Ustaw port i zapisuj wszystko, co przychodzi z UART,
-z czasem od uruchomienia komendy:
-
-    stty -F /dev/ttyUSB0 115200 raw -echo
-    ts -s '%.s' < /dev/ttyUSB0 | tee start_1.log
-
-Zaraz po uruchomieniu `ts` podłącz zasilanie. Gdy pojawi się `login:`, przerwij (`Ctrl+C`). Nie loguj się.
-
-Uruchom płytkę jeszcze raz (odłącz i podłącz zasilanie) i zapisz drugi start do `start_2.log`. Porównaj:
-
-    tail -3 start_1.log
-    tail -3 start_2.log
-
-Ostatnia linia z czasem to linia nad `login:`.
-
-**Q: Dlaczego pierwszy start po wgraniu obrazu jest wolniejszy? Który start mierzyć?**
-
-Znajdź w logu granice etapów:
-
-    grep -E 'U-Boot 20|Starting kernel' start_2.log
-
-- od zera do `U-Boot 20...` - firmware RPi (plus Twój czas reakcji przy zasilaniu - dlatego mediana z 3 startów),
-- od `U-Boot 20...` do `Starting kernel` - U-Boot.
-
-## Pomiar w systemie
-
-Zaloguj się (picocom albo `ssh root@<ADRES_IP>`):
+Uruchom płytkę, zaloguj się (picocom albo `ssh root@<ADRES_IP>`):
 
     systemd-analyze time
     systemd-analyze blame | head -15
@@ -80,7 +49,9 @@ Zaloguj się (picocom albo `ssh root@<ADRES_IP>`):
 - `critical-chain` - łańcuch zależności, na który czekał `multi-user.target` (to on decyduje o czasie, a nie suma
   z `blame` - serwisy startują równolegle).
 
-**Q: Którego etapu startu nie widać w `systemd-analyze time`?**
+Zrestartuj płytkę (`reboot`) i zmierz jeszcze raz.
+
+**Q: Dlaczego pierwszy start po wgraniu obrazu jest wolniejszy? Który start mierzyć?**
 
 Wykres startu wszystkich serwisów:
 
@@ -95,20 +66,21 @@ Wszystkie komunikaty kernela i systemd z czasem od startu kernela - widać, gdzi
 
     journalctl -b -o short-monotonic
 
+`systemd-analyze` liczy czas od startu kernela - firmware RPi i U-Boota nie widzi. Jak zmierzyć cały start, od
+podłączenia zasilania - w suplemencie `1a_pomiar_uart.md`.
+
 Przepisz wyniki do tabeli:
 
-| Etap | Skąd | Przed | Bez U-Boota | Wynik |
-|---|---|---|---|---|
-| firmware RPi | `ts`: do pierwszej linii (z U-Bootem: `U-Boot 20...`, bez `quiet`) | | | |
-| U-Boot | `ts`: do `Starting kernel` | | - | - |
-| kernel | `systemd-analyze time` | | | |
-| userspace | `systemd-analyze time` | | | |
-| razem do `login:` | `ts`: ostatnia linia | | | |
+| Etap | Przed | Wynik |
+|---|---|---|
+| kernel | | |
+| userspace | | |
+| razem | | |
 
 ## Wyrzucamy U-Boota
 
 U-Boot nie jest potrzebny, żeby RPi wystartował - firmware RPi sam ładuje kernel (tak startowaliśmy do dnia 3).
-Zobacz, ile kosztuje U-Boot w Twojej tabeli.
+Ile kosztuje, widać w picocomie: wszystko od `U-Boot 20...` do `Starting kernel`.
 
 Z U-Bootem plik `kernel8.img` na partycji boot to U-Boot, a kernel leży obok jako `Image`. Test na płytce - każ
 firmware ładować od razu kernel:
@@ -118,9 +90,8 @@ firmware ładować od razu kernel:
     sync
     reboot
 
-Zmierz start (`ts`, `systemd-analyze time`) i wpisz do kolumny „Bez U-Boota”. W logu nie ma już `U-Boot 20...`
-ani `Starting kernel`. Parametry kernela nadal pochodzą z `cmdline.txt` - firmware przekazuje je kernelowi tak samo jak
-wcześniej U-Bootowi.
+W picocomie nie ma już U-Boota. Parametry kernela nadal pochodzą z `cmdline.txt` - firmware przekazuje je kernelowi
+tak samo jak wcześniej U-Bootowi.
 
 **Q: Co tracimy, wyrzucając U-Boota?**
 
@@ -151,11 +122,11 @@ Jeśli płytka po zmianie nie wstanie, włóż kartę do czytnika na hoście i c
 
 ### Firmware RPi (`config.txt`)
 
-- `boot_delay=0` i `boot_delay_ms=0` - według dokumentacji meta-raspberrypi firmware czeka domyślnie sekundę przed
-  załadowaniem kernela,
-- `disable_splash=1` - bez tęczowego ekranu na HDMI,
 - `dtoverlay=disable-wifi` - wyłącza Wi-Fi (łączymy się przez Ethernet): kernel nie ładuje sterownika ani firmware
-  Wi-Fi.
+  Wi-Fi,
+- `boot_delay=0` i `boot_delay_ms=0` - według dokumentacji meta-raspberrypi firmware czeka domyślnie sekundę przed
+  załadowaniem kernela, `disable_splash=1` - bez tęczowego ekranu na HDMI. Tych dwóch nie widać w `systemd-analyze`
+  (zmierzysz je na UART - suplement).
 
 W Yocto - zmienne recepty `rpi-config` albo `RPI_EXTRA_CONFIG` (ćwiczenie `04_sprzet/1_led_overlay`):
 
@@ -250,7 +221,8 @@ Sprawdź przed wgraniem, czy zmiany są na partycji boot:
     cat bootfiles/cmdline.txt
     cd -
 
-Wgraj obraz na kartę. Zmierz 3 starty po pierwszym (`ts`), uzupełnij kolumnę „Wynik” i wpisz medianę na czacie.
+Wgraj obraz na kartę. Zmierz 3 starty po pierwszym (`systemd-analyze time`), uzupełnij kolumnę „Wynik” i wpisz
+medianę na czacie.
 
 Źródła:
 - [meta-raspberrypi - Extra build config](https://github.com/agherzan/meta-raspberrypi/blob/wrynose/docs/extra-build-config.md)
@@ -266,4 +238,3 @@ Wgraj obraz na kartę. Zmierz 3 starty po pierwszym (`ts`), uzupełnij kolumnę 
   [journalctl(1)](https://www.freedesktop.org/software/systemd/man/latest/journalctl.html) (`short-monotonic`)
 - openembedded-core wrynose `meta/recipes-core/images/core-image-base.bb`, `meta/classes-recipe/rootfs-postcommands.bbclass`,
   `meta/recipes-core/systemd/systemd_259.5.bb` (`systemd-analyze`)
-- `moreutils` - `man ts`
